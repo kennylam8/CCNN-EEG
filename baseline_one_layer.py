@@ -1,75 +1,34 @@
-"""
-This script provides an example of building a binary neural
-network for classifying glass identification dataset on
-http://archive.ics.uci.edu/ml/datasets/Glass+Identification
-"""
-
 # import libraries
+
+
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
 import scipy.io
+from build_data_70_sub import get_data_70
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # load data and store it in dictionary
-mat = scipy.io.loadmat('alcoholism/uci_eeg_features.mat')
 
-# safe the data to dataFrame for easier handling
-df = pd.DataFrame.from_dict(mat['data'])
-df['y_stimulus'] = pd.DataFrame.from_dict(mat['y_stimulus']).T
-df['subjectid'] = pd.DataFrame.from_dict(mat['subjectid']).T
-df['trialnum'] = pd.DataFrame.from_dict(mat['trialnum']).T
-df['y_alcoholic'] = pd.DataFrame.from_dict(mat['y_alcoholic']).T
-
-# shuffle data
-df = df.sample(frac=1)
-# randomly split data into 70/15/15
-train_data_proportion = 70
-val_data_proportion = 0
-test_data_proportion = 30
-sum_amount = train_data_proportion + val_data_proportion + test_data_proportion
-
-train_amount = round((train_data_proportion / sum_amount) * len(df))
-val_amount = round((val_data_proportion / sum_amount) * len(df))
-
-train_data = df[:train_amount]
-val_data = df[train_amount: train_amount + val_amount]
-test_data = df[train_amount + val_amount:]
-
-n_features = train_data.shape[1] - 1
-# split training data into input and target
-train_input = train_data.iloc[:, :n_features]
-train_target = train_data.iloc[:, n_features]
-
-# normalise training data by columns
-# for column in train_input:
-#    train_input[column] = train_input.loc[:, [column]].apply(lambda x: (x - x.min()) / (x.max()
-#    - x.min()))
-# train_input[column] = train_input.loc[:, [column]].apply(lambda x: (x - x.mean()) / x.std())
-
-# split training data into input and target
-# the first 9 columns are features, the last one is target
-test_input = test_data.iloc[:, :n_features]
-test_target = test_data.iloc[:, n_features]
-
-# normalise testing input data by columns
-# for column in test_input:
-#    test_input[column] = test_input.loc[:, [column]].apply(lambda x: (x - x.min()) / (x.max() -
-
-# x.min()))
-# test_input[column] = test_input.loc[:, [column]].apply(lambda x: (x - x.mean()) / x.std())
+train = 70
+validate = 0
+test = 30
+n_features, train_input, train_target, test_input, test_target = get_data_70(
+    train, validate, test)  # refer to build_data.py the
 
 # create Tensors to hold inputs and outputs
 X = torch.Tensor(train_input.values).float()
 Y = torch.Tensor(train_target.values).long()
 
+
+
 # define the number of inputs, classes, training epochs, and learning rate
 input_neurons = n_features
 hidden_neurons = 10
 output_neurons = 2
-learning_rate = 0
-num_epochs = 1000
-
+learning_rate = 0.01
+num_epochs = 5000
 
 # define a customised neural network structure
 class TwoLayerNet(torch.nn.Module):
@@ -78,6 +37,8 @@ class TwoLayerNet(torch.nn.Module):
         super(TwoLayerNet, self).__init__()
         # define linear hidden layer output
         self.hidden = torch.nn.Linear(n_input, n_hidden)
+        self.hidden2 = torch.nn.Linear(n_hidden, n_hidden)
+        self.hidden3 = torch.nn.Linear(n_hidden, n_hidden)
         # define linear output layer output
         self.out = torch.nn.Linear(n_hidden, n_output)
 
@@ -87,12 +48,17 @@ class TwoLayerNet(torch.nn.Module):
             forward pass, that is to accept a Variable of input
             data, x, and return a Variable of output data, y_pred.
         """
-        # get hidden layer input
-        h_input = self.hidden(x)
-        # define activation function for hidden layer
-        h_output = torch.sigmoid(h_input)
-        # get output layer output
-        y_pred = self.out(h_output)
+        h_input1 = self.hidden(x)
+        h_output1 = torch.sigmoid(h_input1)
+        h_input2 = self.hidden2(h_output1)
+        h_output2 = torch.tanh(h_input2)
+        # h_input3 = self.hidden2(h_output2)
+        # h_output3 = torch.tanh(h_input3)
+        # h_input4 = self.hidden2(h_output3)
+        # h_output4 = torch.tanh(h_input4)
+        # h_input5 = self.hidden2(h_output4)
+        # h_output5 = torch.tanh(h_input5)
+        y_pred = self.out(h_output2)
 
         return y_pred
 
@@ -104,7 +70,7 @@ net = TwoLayerNet(input_neurons, hidden_neurons, output_neurons)
 loss_func = torch.nn.CrossEntropyLoss()
 
 # define optimiser
-optimiser = torch.optim.Rprop(net.parameters(), lr=learning_rate)
+optimiser = torch.optim.Adam(net.parameters(), lr=learning_rate)
 
 # store all losses for visualisation
 all_losses = []
@@ -130,6 +96,26 @@ for epoch in range(num_epochs):
         print('Epoch [%d/%d] Loss: %.4f  Accuracy: %.2f %%'
               % (
                   epoch + 1, num_epochs, loss.item(), 100 * sum(correct) / total))
+
+        X_test = torch.Tensor(test_input.values).float()
+        Y_test = torch.Tensor(test_target.values).long()
+
+        # test the neural network using testing data
+        # It is actually performing a forward pass computation of predicted y
+        # by passing x to the model.
+        # Here, Y_pred_test contains three columns, where the index of the
+        # max column indicates the class of the instance
+        Y_pred_test = net(X_test)
+
+        # get prediction
+        # convert three-column predicted Y values to one column for comparison
+        _, predicted_test = torch.max(Y_pred_test, 1)
+
+        # calculate accuracy
+        total_test = predicted_test.size(0)
+        correct_test = sum(predicted_test.data.numpy() == Y_test.data.numpy())
+
+        print('Testing Accuracy: %.2f %%' % (100 * correct_test / total_test))
 
     # Clear the gradients before running the backward pass.
     net.zero_grad()
@@ -165,7 +151,7 @@ Y_pred = net(X)
 
 _, predicted = torch.max(Y_pred, 1)
 
-for i in range(train_data.shape[0]):
+for i in range(train_input.shape[0]):
     actual_class = Y.data[i]
     predicted_class = predicted.data[i]
 
@@ -182,38 +168,44 @@ Pass testing data to the built neural network and get its performance
 """
 
 # create Tensors to hold inputs and outputs
+def print_test():
+    X_test = torch.Tensor(test_input.values).float()
+    Y_test = torch.Tensor(test_target.values).long()
+
+    # test the neural network using testing data
+    # It is actually performing a forward pass computation of predicted y
+    # by passing x to the model.
+    # Here, Y_pred_test contains three columns, where the index of the
+    # max column indicates the class of the instance
+    Y_pred_test = net(X_test)
+
+    # get prediction
+    # convert three-column predicted Y values to one column for comparison
+    _, predicted_test = torch.max(Y_pred_test, 1)
+
+    # calculate accuracy
+    total_test = predicted_test.size(0)
+    correct_test = sum(predicted_test.data.numpy() == Y_test.data.numpy())
+
+    print('Testing Accuracy: %.2f %%' % (100 * correct_test / total_test))
+
+    """
+    Evaluating the Results
+    
+    To see how well the network performs on different categories, we will
+    create a confusion matrix, indicating for every iris flower (rows)
+    which class the network guesses (columns).
+    
+    """
+
+
 X_test = torch.Tensor(test_input.values).float()
 Y_test = torch.Tensor(test_target.values).long()
-
-# test the neural network using testing data
-# It is actually performing a forward pass computation of predicted y
-# by passing x to the model.
-# Here, Y_pred_test contains three columns, where the index of the
-# max column indicates the class of the instance
 Y_pred_test = net(X_test)
-
-# get prediction
-# convert three-column predicted Y values to one column for comparison
 _, predicted_test = torch.max(Y_pred_test, 1)
-
-# calculate accuracy
-total_test = predicted_test.size(0)
-correct_test = sum(predicted_test.data.numpy() == Y_test.data.numpy())
-
-print('Testing Accuracy: %.2f %%' % (100 * correct_test / total_test))
-
-"""
-Evaluating the Results
-
-To see how well the network performs on different categories, we will
-create a confusion matrix, indicating for every iris flower (rows)
-which class the network guesses (columns).
-
-"""
-
 confusion_test = torch.zeros(output_neurons, output_neurons)
 
-for i in range(test_data.shape[0]):
+for i in range(test_input.shape[0]):
     actual_class = Y_test.data[i]
     predicted_class = predicted_test.data[i]
 
@@ -222,3 +214,5 @@ for i in range(test_data.shape[0]):
 print('')
 print('Confusion matrix for testing:')
 print(confusion_test)
+
+# print(net.out.weight)

@@ -10,8 +10,8 @@ def get_data(train_percent, val_percent, test_percent):
     # safe the data to dataFrame for easier handling
     df = pd.DataFrame.from_dict(mat['data'])
     df['y_stimulus'] = pd.DataFrame.from_dict(mat['y_stimulus']).T
-    df['subjectid'] = pd.DataFrame.from_dict(mat['subjectid']).T
-    df['trialnum'] = pd.DataFrame.from_dict(mat['trialnum']).T
+    # df['subjectid'] = pd.DataFrame.from_dict(mat['subjectid']).T
+    # df['trialnum'] = pd.DataFrame.from_dict(mat['trialnum']).T
     df['y_alcoholic'] = pd.DataFrame.from_dict(mat['y_alcoholic']).T
     print(df)
 
