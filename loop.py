@@ -13,18 +13,17 @@ df['y_stimulus'] = pd.DataFrame.from_dict(mat['y_stimulus']).T
 df['subjectid'] = pd.DataFrame.from_dict(mat['subjectid']).T
 df['trialnum'] = pd.DataFrame.from_dict(mat['trialnum']).T
 df['y_alcoholic'] = pd.DataFrame.from_dict(mat['y_alcoholic']).T
-
-def loop(data_frame, ii, mode):
-    data_frame = data_frame.sample(frac=1)
+df = df.sample(frac=1)
+def loop(data_frame, ii, mode, lst):
+    # data_frame = data_frame.sample(frac=1)
     # print("ii",ii)
-
     if mode == 'leave-one-out':
         train_data = data_frame[~(data_frame['subjectid'] == ii)]
         test_data = data_frame[(data_frame['subjectid'] == ii)]
         print(train_data)
     elif mode == '10-fold':
-        train_data = data_frame[~(data_frame['subjectid'] == ii)]
-        test_data = data_frame[(data_frame['subjectid'] == ii)]
+        train_data = data_frame[~(data_frame['subjectid'].isin(lst))]
+        test_data = data_frame[(data_frame['subjectid'].isin(lst))]
     # print(train_data)
     # train_data = df[df['subjectid'].isin(a[:84])]
     # test_data = df[df['subjectid'].isin(a[84:])]
@@ -58,18 +57,36 @@ def loop(data_frame, ii, mode):
 
 
 acc = []
-for i in df.subjectid.unique():
-    n_features, train_input, train_target, test_input, test_target = loop(df, i)
-    # print(n_features, train_input, train_target, test_input, test_target)
-    acc.append(main_casper(n_features, train_input, train_target, test_input, test_target))
+# for i in df.subjectid.unique():
+#     n_features, train_input, train_target, test_input, test_target = loop(df, i)
+#     # print(n_features, train_input, train_target, test_input, test_target)
+#     acc.append(main_casper(n_features, train_input, train_target, test_input, test_target))
 
 aaa = list(df.subjectid.unique())
 random.shuffle(aaa)
+train_lst = []
 for i in range(1, 11):
-    print(12*i)
-    df_70 = df[df['subjectid'].isin(aaa[12*(i-1):12*i])]
-    df_rem = df[df['subjectid'].isin(aaa[12*i:])]
+    print(i)
+    if i == 9:
+        lss = aaa[12*(i-1):12*i+1]
+    if i == 10:
+        lss = aaa[12*(i-1)+1:12*i+1]
+    else:
+        lss = aaa[12 * (i - 1):12 * i]
+    df_rem = df[~(df['subjectid'].isin(lss))]
+    df_70 = df[(df['subjectid'].isin(lss))]
+    train_lst = train_lst+lss
+
     if len(df_rem) + len(df_70) != 11057:
+        print(len(df_rem))
+        print(len(df_70))
         raise ValueError
 
+    n_features, train_input, train_target, test_input, test_target = loop(df, i, '10-fold',lss)
+    # print(n_features, train_input, train_target, test_input,
+    # test_target)
+    acc.append(main_casper(n_features, train_input, train_target, test_input, test_target))
+
 print(sum(acc) / len(acc))
+# print(train_lst)
+print(train_lst)

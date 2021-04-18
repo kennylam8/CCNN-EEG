@@ -21,8 +21,8 @@ def main_casper (n_features, train_input, train_target, test_input, test_target)
     input_neurons = n_features
     output_neurons = 2
     learning_rate = 0.01
-    num_epochs = 500
-    max_iter = 5
+    num_epochs = 800
+    max_iter = 7
 
     # define the CasPer network structure
     class CasPer(torch.nn.Module):
