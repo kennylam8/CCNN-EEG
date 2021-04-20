@@ -1,7 +1,6 @@
 import pandas as pd
 import scipy.io
 import random
-import matplotlib.pyplot as plt
 
 from main import main_casper
 
@@ -13,10 +12,18 @@ df['y_stimulus'] = pd.DataFrame.from_dict(mat['y_stimulus']).T
 df['subjectid'] = pd.DataFrame.from_dict(mat['subjectid']).T
 df['trialnum'] = pd.DataFrame.from_dict(mat['trialnum']).T
 df['y_alcoholic'] = pd.DataFrame.from_dict(mat['y_alcoholic']).T
-df = df.sample(frac=1)
+df = df.sample(frac=1,random_state=2)
+random.seed(10)
+
+
+learning_rate = 0.01
+num_epochs = 600
+max_iter = 5
+
 def loop(data_frame, ii, mode, lst):
     # data_frame = data_frame.sample(frac=1)
     # print("ii",ii)
+
     if mode == 'leave-one-out':
         train_data = data_frame[~(data_frame['subjectid'] == ii)]
         test_data = data_frame[(data_frame['subjectid'] == ii)]
@@ -63,6 +70,7 @@ acc = []
 #     acc.append(main_casper(n_features, train_input, train_target, test_input, test_target))
 
 aaa = list(df.subjectid.unique())
+
 random.shuffle(aaa)
 train_lst = []
 for i in range(1, 11):
@@ -85,7 +93,7 @@ for i in range(1, 11):
     n_features, train_input, train_target, test_input, test_target = loop(df, i, '10-fold',lss)
     # print(n_features, train_input, train_target, test_input,
     # test_target)
-    acc.append(main_casper(n_features, train_input, train_target, test_input, test_target))
+    acc.append(main_casper(n_features, train_input, train_target, test_input, test_target, learning_rate,num_epochs,max_iter))
 
 print(sum(acc) / len(acc))
 # print(train_lst)

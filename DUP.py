@@ -89,7 +89,7 @@ Y = torch.Tensor(train_target.values).long()
 input_neurons = n_features
 output_neurons = 2
 learning_rate = 0.01
-num_epochs = 1500
+num_epochs = 1
 
 # define a customised neural network structure
 class CasPer(torch.nn.Module):
@@ -311,7 +311,6 @@ X_test, Y_test = twospirals(5000)
 X_test = torch.Tensor(X_test).float()
 Y_test = torch.Tensor(Y_test).long()
 Y_pred_test = net(X_test)
-print(Y_pred_test)
 _, predicted_test = torch.max(Y_pred_test, 1)
 
 plt.title('Neural Network result')
