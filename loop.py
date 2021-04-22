@@ -12,13 +12,15 @@ df['y_stimulus'] = pd.DataFrame.from_dict(mat['y_stimulus']).T
 df['subjectid'] = pd.DataFrame.from_dict(mat['subjectid']).T
 df['trialnum'] = pd.DataFrame.from_dict(mat['trialnum']).T
 df['y_alcoholic'] = pd.DataFrame.from_dict(mat['y_alcoholic']).T
-df = df.sample(frac=1,random_state=2)
-random.seed(10)
+
+df = df.sample(frac=1)
+# df = df.sample(frac=1,random_state=3)
+# random.seed(313)
 
 
-learning_rate = 0.01
-num_epochs = 600
-max_iter = 5
+learning_rate = 1
+num_epochs = 500
+max_iter = 6
 
 def loop(data_frame, ii, mode, lst):
     # data_frame = data_frame.sample(frac=1)
@@ -31,7 +33,10 @@ def loop(data_frame, ii, mode, lst):
     elif mode == '10-fold':
         train_data = data_frame[~(data_frame['subjectid'].isin(lst))]
         test_data = data_frame[(data_frame['subjectid'].isin(lst))]
+
     # print(train_data)
+    # a = list(df.subjectid.unique())
+    # random.shuffle(a)
     # train_data = df[df['subjectid'].isin(a[:84])]
     # test_data = df[df['subjectid'].isin(a[84:])]
 
@@ -60,6 +65,9 @@ def loop(data_frame, ii, mode, lst):
     # the first 9 columns are features, the last one is target
     test_input = test_data.iloc[:, :n_features]
     test_target = test_data.iloc[:, n_features]
+
+    # print(train_input)
+    # print(test_input)
     return (n_features, train_input, train_target, test_input, test_target)
 
 
@@ -73,6 +81,8 @@ aaa = list(df.subjectid.unique())
 
 random.shuffle(aaa)
 train_lst = []
+
+# for _ in range(1):
 for i in range(1, 11):
     print(i)
     if i == 9:
@@ -81,6 +91,10 @@ for i in range(1, 11):
         lss = aaa[12*(i-1)+1:12*i+1]
     else:
         lss = aaa[12 * (i - 1):12 * i]
+
+    # df_rem = df[df['subjectid'].isin(aaa[84:])]
+    # df_70 = df[df['subjectid'].isin(aaa[:84])]
+
     df_rem = df[~(df['subjectid'].isin(lss))]
     df_70 = df[(df['subjectid'].isin(lss))]
     train_lst = train_lst+lss
@@ -90,11 +104,13 @@ for i in range(1, 11):
         print(len(df_70))
         raise ValueError
 
-    n_features, train_input, train_target, test_input, test_target = loop(df, i, '10-fold',lss)
+    print(df_70)
+    n_features, train_input, train_target, test_input, test_target = loop(df, 123, '10-fold', lss)
     # print(n_features, train_input, train_target, test_input,
     # test_target)
     acc.append(main_casper(n_features, train_input, train_target, test_input, test_target, learning_rate,num_epochs,max_iter))
 
 print(sum(acc) / len(acc))
+print(acc)
 # print(train_lst)
 print(train_lst)

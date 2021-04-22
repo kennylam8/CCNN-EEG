@@ -90,68 +90,12 @@ input_neurons = n_features
 output_neurons = 2
 learning_rate = 0.01
 num_epochs = 1
-
-# define a customised neural network structure
-class CasPer(torch.nn.Module):
-
-    def __init__(self, n_input, n_output):
-        super(CasPer, self).__init__()
-        # self.hidden = torch.nn.Linear(n_input, n_hidden)
-        self.hidden_list = torch.nn.ModuleList()
-        self.out = torch.nn.Linear(n_input, n_output)
-        self.iteration = 0
-        self.n_output = n_output
-        self.last_weight = None
-        self.last_bias = None
-        self.tempOut = None
-        self.new_hidden = None
-
-    def add_neuron(self):
-        self.new_hidden = torch.nn.Linear(self.iteration - 1 +
-                                                input_neurons, 1)
-        self.out = torch.nn.Linear(self.iteration + input_neurons, self.n_output)
-        with torch.no_grad():
-            for x in range(len(self.out.weight)):
-                for ii in range(self.last_weight.size()[1]):
-                    self.out.weight[x, ii] = self.last_weight[x, ii]
-        self.out.bias = self.last_bias
-
-    def forward(self, x):
-        """
-            In the forward function we define the process of performing
-            forward pass, that is to accept a Variable of input
-            data, x, and return a Variable of output data, y_pred.
-        """
-        if iteration == 0:
-            return self.out(x)
-        if iteration == 1:
-            ho = x
-            output = x
-            ho = self.new_hidden(output)
-            ho = torch.tanh(ho)
-            output = torch.cat((output, ho), 1)
-            y_pred = self.out(output)
-            # print(x)
-            return y_pred
-        else:
-            # print("in_feature: ", self.new_hidden.in_features, "iteration: ",self.iteration)
-            ho = x
-            output = x
-            for hidden in self.hidden_list:
-                # print(hidden)
-                ho = hidden(output)
-                ho = torch.sigmoid(ho)
-                output = torch.cat((output, ho), 1)
-            # print(output.size())
-            ho = self.new_hidden(output)
-            ho = torch.sigmoid(ho)
-            output = torch.cat((output, ho), 1)
-            y_pred = self.out(output)
-            return y_pred
-
+max_iter = 8
 
 # define a neural network using the customised structure
-net = CasPer(input_neurons, output_neurons)
+
+from main import main_casper
+net = main_casper(n_features, train_input, train_target, test_input, test_target, learning_rate,num_epochs ,max_iter)
 
 # define loss function
 loss_func = torch.nn.CrossEntropyLoss()
@@ -161,70 +105,6 @@ loss_func = torch.nn.CrossEntropyLoss()
 
 # store all losses for visualisation
 all_losses = []
-max_iter = 8
-# print(net.parameters())
-# train a neural network
-for iteration in range(max_iter):
-    # optimiser = torch.optim.Rprop(net.parameters(), lr=learning_rate)
-    if iteration > 0:
-        optimiser = torch.optim.Rprop([
-            {"params": net.out.parameters(), "lr": learning_rate*3},
-            {"params": net.hidden_list.parameters(), "lr": learning_rate},
-            {'params': net.new_hidden.weight, 'lr': learning_rate*6},
-            {'params': net.new_hidden.bias, 'lr': learning_rate}
-        ])
-    else:
-        optimiser = torch.optim.Rprop([
-            {"params": net.out.parameters(), "lr": learning_rate},
-            {"params": net.hidden_list.parameters(), "lr": 0},
-        ], lr=learning_rate, )
-    for epoch in range(num_epochs):
-        # Perform forward pass: compute predicted y by passing x to the model.
-        Y_pred = net(X)
-
-        # Compute loss
-        loss = loss_func(Y_pred, Y)
-
-        all_losses.append(loss.item())
-
-        # print progress
-        if epoch % 50 == 0:
-            # convert three-column predicted Y values to one column for comparison
-            _, predicted = torch.max(Y_pred, 1)
-
-            # calculate and print accuracy
-            total = predicted.size(0)
-            correct = predicted.data.numpy() == Y.data.numpy()
-
-            print('Epoch [%d/%d] Loss: %.4f  Accuracy: %.2f %%'
-                  % (
-                      epoch + 1, num_epochs, loss.item(), 100 * sum(correct) / total))
-
-        # Clear the gradients before running the backward pass.
-        net.zero_grad()
-
-        # Perform backward pass
-        loss.backward()
-
-        # Calling the step function on an Optimiser makes an update to its
-        # parameters
-        optimiser.step()
-    # print("weight: " , net.out.weight)
-    # print("bias: ", net.out.bias)
-    # print(iteration,max_iter)
-    if iteration == max_iter - 1:
-        break
-    if net.new_hidden is not None:
-        # print(net.new_hidden)
-        net.hidden_list.append(net.new_hidden)
-        HOW = net.hidden_list[0].weight[0][0]
-
-        print(net.hidden_list[0].weight[0][0] == HOW)
-
-    net.last_weight = net.out.weight
-    net.last_bias = net.out.bias
-    net.iteration += 1
-    net.add_neuron()
 
 # Optional: plotting historical loss from ``all_losses`` during network learning
 # Please uncomment me from next line to ``plt.show()`` if you want to plot loss

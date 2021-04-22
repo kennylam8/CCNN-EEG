@@ -7,14 +7,13 @@ http://archive.ics.uci.edu/ml/datasets/Glass+Identification
 # import libraries
 import torch
 from SARProp import SARprop
-torch.manual_seed(0)
+# torch.manual_seed(0)
 from build_data_70_sub import get_data_70
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # load data and store it in dictionary
 
 def main_casper (n_features, train_input, train_target, test_input, test_target, learning_rate,num_epochs ,max_iter):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # create Tensors to hold inputs and outputs
     X = torch.Tensor(train_input.values).float()
     Y = torch.Tensor(train_target.values).long()
@@ -101,10 +100,10 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
         # optimiser = torch.optim.Rprop(net.parameters(), lr=learning_rate)
         if iteration > 0:
             optimiser = SARprop([
-                {"params": net.out.parameters(), "lr": 0.005},
-                {"params": net.hidden_list.parameters(), "lr": 0.001},
-                {'params': net.new_hidden.weight, 'lr': 0.2},
-                {'params': net.new_hidden.bias, 'lr': 0.001}
+                {"params": net.out.parameters(), "lr": 0.007*1.2},
+                {"params": net.hidden_list.parameters(), "lr": 0.002*1.2},
+                {'params': net.new_hidden.weight, 'lr': 0.25*1.2},
+                {'params': net.new_hidden.bias, 'lr': 0.002*1.2}
             ])
         else:
             optimiser = SARprop([
@@ -149,7 +148,25 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
                       % (
                           epoch + 1, num_epochs, loss.item(),
                           100 * sum(correct) / total))
-
+# ###
+#                 X_test = torch.Tensor(test_input.values).float()
+#                 Y_test = torch.Tensor(test_target.values).long()
+#
+#                 # test the neural network using testing data
+#                 # It is actually performing a forward pass computation of predicted y
+#                 # by passing x to the model.
+#                 # Here, Y_pred_test contains three columns, where the index of the
+#                 # max column indicates the class of the instance
+#                 Y_pred_test = net(X_test)
+#
+#                 # get prediction
+#                 # convert three-column predicted Y values to one column for comparison
+#                 _, predicted_test = torch.max(Y_pred_test, 1)
+#                 total_test = predicted_test.size(0)
+#                 correct_test = sum(predicted_test.data.numpy() == Y_test.data.numpy())
+#                 print('')
+#                 print('Testing Accuracy: %.2f %%' % (100 * correct_test / total_test))
+# ###
             # Clear the gradients before running the backward pass.
             net.zero_grad()
 
@@ -158,7 +175,7 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
 
             for p in net.parameters():
                 # print(type(p.grad), "GRAD")
-                k = 0.005
+                k = 0.05
                 p.grad -= k * torch.sign(p.grad) * (p.grad ** 2) * 2 **(-0.01* epoch)
 
             # Calling the step function on an Optimiser makes an update to its
@@ -170,11 +187,10 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
         if iteration == max_iter - 1:
             break
         if net.new_hidden is not None:
-            # print(net.new_hidden)
             net.hidden_list.append(net.new_hidden)
             HOW = net.hidden_list[0].weight[0][0]
 
-            print("ASDASDASDASD")
+            print("Number of neuron: ",net.hidden_list.__len__())
 
         net.last_weight = net.out.weight
         net.last_bias = net.out.bias
