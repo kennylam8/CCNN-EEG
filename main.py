@@ -7,17 +7,72 @@ http://archive.ics.uci.edu/ml/datasets/Glass+Identification
 # import libraries
 import torch
 from SARProp import SARprop
-# torch.manual_seed(0)
+# from loop import seedG
 from build_data_70_sub import get_data_70
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # load data and store it in dictionary
 
-def main_casper (n_features, train_input, train_target, test_input, test_target, learning_rate,num_epochs ,max_iter):
+# define the CasPer network structure
+class CasPer(torch.nn.Module):
+    def __init__(self, n_input, n_output):
+        super(CasPer, self).__init__()
+        # self.hidden = torch.nn.Linear(n_input, n_hidden)
+        self.hidden_list = torch.nn.ModuleList()
+        self.out = torch.nn.Linear(n_input, n_output)
+        self.n_output = n_output
+        self.iteration = 0
+        self.last_weight = None
+        self.last_bias = None
+        self.tempOut = None
+        self.new_hidden = None
+        self.n_input = n_input
+
+    def add_neuron(self):
+        self.new_hidden = torch.nn.Linear(self.iteration - 1 + self.n_input,
+                                          1)
+        self.out = torch.nn.Linear(self.iteration + self.n_input,
+                                   self.n_output)
+        with torch.no_grad():
+            for x in range(len(self.out.weight)):
+                for ii in range(self.last_weight.size()[1]):
+                    self.out.weight[x, ii] = self.last_weight[x, ii]
+        self.out.bias = self.last_bias
+
+    def forward(self, x):
+        """
+            In the forward function we define the process of performing
+            forward pass, that is to accept a Variable of input
+            data, x, and return a Variable of output data, y_pred.
+        """
+        if self.iteration == 0:
+            return self.out(x)
+        if self.iteration == 1:
+            ho = x
+            output = x
+            ho = self.new_hidden(output)
+            ho = torch.sigmoid(ho)
+            output = torch.cat((output, ho), 1)
+            y_pred = self.out(output)
+            return y_pred
+        else:
+            ho = x
+            output = x
+            for hidden in self.hidden_list:
+                ho = hidden(output)
+                ho = torch.sigmoid(ho)
+                output = torch.cat((output, ho), 1)
+            ho = self.new_hidden(output)
+            ho = torch.sigmoid(ho)
+            output = torch.cat((output, ho), 1)
+            y_pred = self.out(output)
+            return y_pred
+
+
+def main_casper (n_features, train_input, train_target, test_input, test_target, learning_rate,num_epochs ,max_iter, seed):
     # create Tensors to hold inputs and outputs
     X = torch.Tensor(train_input.values).float()
     Y = torch.Tensor(train_target.values).long()
-    # Y = Y.unsqueeze(-1)
 
     # define the number of inputs, classes, training epochs, and learning rate
     input_neurons = n_features
@@ -25,65 +80,6 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
     # learning_rate = 0.01
     # num_epochs = 500
     # max_iter = 5
-
-    # define the CasPer network structure
-    class CasPer(torch.nn.Module):
-        def __init__(self, n_input, n_output):
-            super(CasPer, self).__init__()
-            # self.hidden = torch.nn.Linear(n_input, n_hidden)
-            self.hidden_list = torch.nn.ModuleList()
-            self.out = torch.nn.Linear(n_input, n_output)
-            self.iteration = 0
-            self.n_output = n_output
-            self.last_weight = None
-            self.last_bias = None
-            self.tempOut = None
-            self.new_hidden = None
-
-        def add_neuron(self):
-            self.new_hidden = torch.nn.Linear(self.iteration - 1 + input_neurons,
-                                              1)
-            self.out = torch.nn.Linear(self.iteration + input_neurons,
-                                       self.n_output)
-            with torch.no_grad():
-                for x in range(len(self.out.weight)):
-                    for ii in range(self.last_weight.size()[1]):
-                        self.out.weight[x, ii] = self.last_weight[x, ii]
-            self.out.bias = self.last_bias
-
-        def forward(self, x):
-            """
-                In the forward function we define the process of performing
-                forward pass, that is to accept a Variable of input
-                data, x, and return a Variable of output data, y_pred.
-            """
-            if iteration == 0:
-                return self.out(x)
-            if iteration == 1:
-                ho = x
-                output = x
-                ho = self.new_hidden(output)
-                ho = torch.sigmoid(ho)
-                output = torch.cat((output, ho), 1)
-                y_pred = self.out(output)
-                # print(x)
-                return y_pred
-            else:
-                # print("in_feature: ", self.new_hidden.in_features, "iteration:
-                # ",self.iteration)
-                ho = x
-                output = x
-                for hidden in self.hidden_list:
-                    # print(hidden)
-                    ho = hidden(output)
-                    ho = torch.sigmoid(ho)
-                    output = torch.cat((output, ho), 1)
-                # print(output.size())
-                ho = self.new_hidden(output)
-                ho = torch.sigmoid(ho)
-                output = torch.cat((output, ho), 1)
-                y_pred = self.out(output)
-                return y_pred
 
 
     # define a neural network using the customised structure
@@ -98,14 +94,16 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
     # train a neural network
     for iteration in range(max_iter):
         # optimiser = torch.optim.Rprop(net.parameters(), lr=learning_rate)
-        if iteration > 0:
+        net.iteration = iteration
+        if net.iteration > 0:
             optimiser = SARprop([
-                {"params": net.out.parameters(), "lr": 0.007*1.2},
-                {"params": net.hidden_list.parameters(), "lr": 0.002*1.2},
-                {'params': net.new_hidden.weight, 'lr': 0.25*1.2},
-                {'params': net.new_hidden.bias, 'lr': 0.002*1.2}
+                {"params": net.out.parameters(), "lr": 0.01},
+                {"params": net.hidden_list.parameters(), "lr": 0.005},
+                {'params': net.new_hidden.weight, 'lr': 0.2},
+                {'params': net.new_hidden.bias, 'lr': 0.005}
             ])
         else:
+            # print("WDANJWKDBNAKWJDNAKJWNDJKAWNDJKANWJD®")
             optimiser = SARprop([
                 {"params": net.out.parameters(), "lr": learning_rate},
                 {"params": net.hidden_list.parameters(), "lr": 0},
@@ -122,22 +120,6 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
 
             # print progress
             if epoch % 50 == 0:
-                # convert three-column predicted Y values to one column for
-                # comparison
-                # # print(Y_pred)
-                # predicted = torch.where(Y_pred < 0.5, 0, 1)
-                # # print(predicted)
-                # # calculate and print accuracy
-                # total = predicted.size()[0]
-                # # print(total)
-                # correct = predicted.data.numpy() == Y.data.numpy()
-                # # print(total)
-                #
-                # print('Epoch [%d/%d] Loss: %.4f  Accuracy: %.2f %%'
-                #       % (epoch + 1, num_epochs, loss.item(), 100 * sum(correct) / total))
-                # # print(loss.item())
-                # # print((100 * sum(correct) / total))
-
                 _, predicted = torch.max(Y_pred, 1)
 
                 # calculate and print accuracy
@@ -174,8 +156,7 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
             loss.backward()
 
             for p in net.parameters():
-                # print(type(p.grad), "GRAD")
-                k = 0.05
+                k = 0.0005
                 p.grad -= k * torch.sign(p.grad) * (p.grad ** 2) * 2 **(-0.01* epoch)
 
             # Calling the step function on an Optimiser makes an update to its
@@ -184,7 +165,7 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
         # print("weight: " , net.out.weight)
         # print("bias: ", net.out.bias)
         # print(iteration,max_iter)
-        if iteration == max_iter - 1:
+        if net.iteration == max_iter - 1:
             break
         if net.new_hidden is not None:
             net.hidden_list.append(net.new_hidden)
@@ -261,7 +242,7 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
     total_test = predicted_test.size(0)
     correct_test = sum(predicted_test.data.numpy() == Y_test.data.numpy())
     print('')
-    print('Testing Accuracy: %.2f %%' % (100 * correct_test / total_test))
+    print('Validation/Testing Accuracy: %.2f %%' % (100 * correct_test / total_test))
     """
     Evaluating the Results
     
@@ -272,4 +253,6 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
     """
 
     # print(net.out.weight)
-    return 100 * correct_test / total_test
+
+
+    return 100 * correct_test / total_test, net
