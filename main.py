@@ -1,23 +1,29 @@
 """
-This script provides an example of building a binary neural
-network for classifying glass identification dataset on
-http://archive.ics.uci.edu/ml/datasets/Glass+Identification
-"""
+The Casper algorithm is implemented base on the sample code provided by COMP4660
+Lab content, algorithm/codes including normalization, plotting loss diagram and plotting
+error matrix and printing epoch/loss and accuracy has been copied directly from the COMP4660
+Lab material. Some of which, as denoted in the lab material, is provided by UCI originally serve
+as an example for the classfication of the glass dataset
+url: http://archive.ics.uci.edu/ml/datasets/Glass+Identification
 
+Other codes however, written entirely on my own (Kenny Lam).
+"""
+"""
+main.py is used for specifying Casper neural network and for training the network, it does not run on its own as it requires dataset as input,
+the entire project is done by these steps using these files:
+1. draw_subject_for_model_selection.py  for randomly drawing 12 subjects for model selection (redrawn if the 12 subject is extremely unbalanced)
+2. perform model selection using model_selection.py and hyper-parameter tuning using those 12 subjects (we used leave-one-subject-out for tuning)
+3. run within_subject_train_test.py for within subject testing
+4. run cross_subject_train-test.py for cross subject testing
+"""
 # import libraries
 import torch
-from SARProp import SARprop
-# from loop import seedG
-from build_data_70_sub import get_data_70
-
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# load data and store it in dictionary
+import time
 
 # define the CasPer network structure
 class CasPer(torch.nn.Module):
     def __init__(self, n_input, n_output):
         super(CasPer, self).__init__()
-        # self.hidden = torch.nn.Linear(n_input, n_hidden)
         self.hidden_list = torch.nn.ModuleList()
         self.out = torch.nn.Linear(n_input, n_output)
         self.n_output = n_output
@@ -40,11 +46,6 @@ class CasPer(torch.nn.Module):
         self.out.bias = self.last_bias
 
     def forward(self, x):
-        """
-            In the forward function we define the process of performing
-            forward pass, that is to accept a Variable of input
-            data, x, and return a Variable of output data, y_pred.
-        """
         if self.iteration == 0:
             return self.out(x)
         if self.iteration == 1:
@@ -56,7 +57,6 @@ class CasPer(torch.nn.Module):
             y_pred = self.out(output)
             return y_pred
         else:
-            ho = x
             output = x
             for hidden in self.hidden_list:
                 ho = hidden(output)
@@ -69,18 +69,14 @@ class CasPer(torch.nn.Module):
             return y_pred
 
 
-def main_casper (n_features, train_input, train_target, test_input, test_target, learning_rate,num_epochs ,max_iter, seed):
-    # create Tensors to hold inputs and outputs
-    X = torch.Tensor(train_input.values).float()
-    Y = torch.Tensor(train_target.values).long()
+def main_casper(n_features, train_input, train_target, test_input, test_target, cutoff, mode, train_data):
 
     # define the number of inputs, classes, training epochs, and learning rate
     input_neurons = n_features
     output_neurons = 2
-    # learning_rate = 0.01
-    # num_epochs = 500
-    # max_iter = 5
-
+    num_epochs = 5000  # This total number of epoch would not exceed 5000 so this is just for looping
+    max_iter = 6 if mode == "cross-subject" else 15 # maximum of neuron
+    t_start = time.time()
 
     # define a neural network using the customised structure
     net = CasPer(input_neurons, output_neurons)
@@ -88,35 +84,76 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
     # define loss function
     loss_func = torch.nn.CrossEntropyLoss()
 
-    # store all losses for visualisation
     all_losses = []
-    # print(net.parameters())
-    # train a neural network
+    all_epoch = 0
     for iteration in range(max_iter):
-        # optimiser = torch.optim.Rprop(net.parameters(), lr=learning_rate)
         net.iteration = iteration
         if net.iteration > 0:
-            optimiser = SARprop([
+            optimiser = torch.optim.Rprop([
                 {"params": net.out.parameters(), "lr": 0.01},
                 {"params": net.hidden_list.parameters(), "lr": 0.005},
                 {'params': net.new_hidden.weight, 'lr': 0.2},
                 {'params': net.new_hidden.bias, 'lr': 0.005}
             ])
         else:
-            # print("WDANJWKDBNAKWJDNAKJWNDJKAWNDJKANWJD®")
-            optimiser = SARprop([
-                {"params": net.out.parameters(), "lr": learning_rate},
-                {"params": net.hidden_list.parameters(), "lr": 0},
-            ], lr=learning_rate,)
+            optimiser = torch.optim.Rprop([
+                {"params": net.out.parameters(), "lr": 0.005},
+                {"params": net.hidden_list.parameters(), "lr": 0.005},
+            ], lr=0.01,)
+
+        P = 50
+        constant_epoch = 50 if mode == "cross-subject" else 500
+        checkpoint_epoch = constant_epoch + P * (iteration + 1)
+        FLAG = False
         for epoch in range(num_epochs):
-            # Perform forward pass: compute predicted y by passing x to the model.
-            Y_pred = net(X)
+            mb = 0
 
-            # Compute loss
+            td = torch.utils.data.DataLoader(dataset=train_data.to_numpy(), batch_size=1024, shuffle=True) \
+                if mode == "cross-subject" else [0]
 
-            loss = loss_func(Y_pred, Y)
+            for batch in td:
+                if mode == "cross-subject":
+                    X = batch[:,:-1]
+                    Y = batch[:,-1]
+                    X = (X).float()
+                    Y = (Y).long()
+                else:
+                    X = torch.Tensor(train_input.values).float()
+                    Y = torch.Tensor(train_target.values).long()
 
-            all_losses.append(loss.item())
+                all_epoch += 1
+                mb += 1
+                # Perform forward pass: compute predicted y by passing x to the model.
+                Y_pred = net(X)
+
+                # Compute loss
+
+                loss = loss_func(Y_pred, Y)
+
+                # Clear the gradients before running the backward pass.
+                net.zero_grad()
+
+                # Perform backward pass
+                loss.backward()
+
+                for p in net.parameters():
+                    k = 0.0005
+                    p.grad -= k * torch.sign(p.grad) * (p.grad ** 2) * 2 **(-0.01* epoch)
+
+                # Calling the step function on an Optimiser makes an update to its parameters
+                optimiser.step()
+
+            if epoch == 0:
+                loss_0 = loss.item()
+            elif loss.item() < cutoff:
+                break
+
+            if epoch == checkpoint_epoch:
+                if loss_0 - loss.item() < 0.01:
+                    FLAG = True
+                    break
+                else:
+                    break
 
             # print progress
             if epoch % 50 == 0:
@@ -128,64 +165,35 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
 
                 print('Epoch [%d/%d] Loss: %.4f  Accuracy: %.2f %%'
                       % (
-                          epoch + 1, num_epochs, loss.item(),
+                          epoch + 1, checkpoint_epoch, loss.item(),
                           100 * sum(correct) / total))
-# ###
-#                 X_test = torch.Tensor(test_input.values).float()
-#                 Y_test = torch.Tensor(test_target.values).long()
-#
-#                 # test the neural network using testing data
-#                 # It is actually performing a forward pass computation of predicted y
-#                 # by passing x to the model.
-#                 # Here, Y_pred_test contains three columns, where the index of the
-#                 # max column indicates the class of the instance
-#                 Y_pred_test = net(X_test)
-#
-#                 # get prediction
-#                 # convert three-column predicted Y values to one column for comparison
-#                 _, predicted_test = torch.max(Y_pred_test, 1)
-#                 total_test = predicted_test.size(0)
-#                 correct_test = sum(predicted_test.data.numpy() == Y_test.data.numpy())
-#                 print('')
-#                 print('Testing Accuracy: %.2f %%' % (100 * correct_test / total_test))
-# ###
-            # Clear the gradients before running the backward pass.
-            net.zero_grad()
+                all_losses.append(loss.item())
 
-            # Perform backward pass
-            loss.backward()
 
-            for p in net.parameters():
-                k = 0.0005
-                p.grad -= k * torch.sign(p.grad) * (p.grad ** 2) * 2 **(-0.01* epoch)
-
-            # Calling the step function on an Optimiser makes an update to its
-            # parameters
-            optimiser.step()
-        # print("weight: " , net.out.weight)
-        # print("bias: ", net.out.bias)
-        # print(iteration,max_iter)
-        if net.iteration == max_iter - 1:
+        if loss.item() < cutoff or FLAG:
             break
+
         if net.new_hidden is not None:
             net.hidden_list.append(net.new_hidden)
             HOW = net.hidden_list[0].weight[0][0]
 
-            print("Number of neuron: ",net.hidden_list.__len__())
+            print("Number of neuron: ",net.hidden_list.__len__() + 1)
 
         net.last_weight = net.out.weight
         net.last_bias = net.out.bias
         net.iteration += 1
         net.add_neuron()
 
+    t_end = time.time()
     # Optional: plotting historical loss from ``all_losses`` during network
     # learning
     # Please uncomment me from next line to ``plt.show()`` if you want to plot loss
-
     # import matplotlib.pyplot as plt
-    #
     # plt.figure()
-    # plt.plot(all_losses)
+    # plt.plot(all_losses, c='blue', label="Training")
+    # plt.xlabel("epoch")
+    # plt.ylabel("loss")
+    # plt.legend(loc="lower left")
     # plt.show()
 
     """
@@ -197,6 +205,10 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
     
     """
 
+    X = torch.Tensor(train_input.values).float()
+    Y = torch.Tensor(train_target.values).long()
+
+    print(all_epoch, "all epoch")
     confusion = torch.zeros(2, 2)
 
     Y_pred = net(X)
@@ -206,11 +218,6 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
     for i in range(train_input.shape[0]):
         actual_class = Y.data[i]
         predicted_class = predicted.data[i]
-        # predicted_class = torch.LongTensor(predicted_class)
-        # actual_class = actual_class.long()
-        # print(predicted_class)
-        # print(actual_class)
-
         confusion[int(actual_class)][int(predicted_class)] += 1
 
     print('')
@@ -226,33 +233,26 @@ def main_casper (n_features, train_input, train_target, test_input, test_target,
     # create Tensors to hold inputs and outputs
     X_test = torch.Tensor(test_input.values).float()
     Y_test = torch.Tensor(test_target.values).long()
-
-    # test the neural network using testing data
-    # It is actually performing a forward pass computation of predicted y
-    # by passing x to the model.
-    # Here, Y_pred_test contains three columns, where the index of the
-    # max column indicates the class of the instance
+    confusion = torch.zeros(2, 2)
     Y_pred_test = net(X_test)
 
     # get prediction
     # convert three-column predicted Y values to one column for comparison
     _, predicted_test = torch.max(Y_pred_test, 1)
 
+    for i in range(test_input.shape[0]):
+        actual_class = Y_test.data[i]
+        predicted_class = predicted_test.data[i]
+
+        confusion[int(actual_class)][int(predicted_class)] += 1
+    print('')
+    print('Confusion matrix for Validation/Testing:')
+    print(confusion)
+    print("Sensitivity: ", confusion[0][0] / (confusion[0][0] + confusion[1][0]))
     # calculate accuracy
     total_test = predicted_test.size(0)
     correct_test = sum(predicted_test.data.numpy() == Y_test.data.numpy())
     print('')
     print('Validation/Testing Accuracy: %.2f %%' % (100 * correct_test / total_test))
-    """
-    Evaluating the Results
-    
-    To see how well the network performs on different categories, we will
-    create a confusion matrix, indicating for every iris flower (rows)
-    which class the network guesses (columns).
-    
-    """
 
-    # print(net.out.weight)
-
-
-    return 100 * correct_test / total_test, net
+    return 100 * correct_test / total_test, confusion[0][0] / (confusion[0][0] + confusion[1][0]), all_epoch, loss.item(), net.iteration, t_end-t_start
