@@ -9,25 +9,21 @@ url: http://archive.ics.uci.edu/ml/datasets/Glass+Identification
 Other codes however, written entirely on my own (Kenny Lam).
 """
 
+import statistics
 import pandas as pd
 import scipy.io
 from draw_subject_for_model_selection import get_test_subject_ids
-from main import main_casper
-import torch
-import statistics
+from casper_main import main_casper
 
-# mat = scipy.io.loadmat('alcoholism/uci_eeg_images_v2.mat')
-# data = mat["data"]
-# PRE = data.shape[0]
-# data = data.reshape(PRE, -1)
-# print(data.shape)
-# safe the data to dataFrame for easier handling
-# df = pd.DataFrame.from_dict(data[:,:1500])
 
 mat = scipy.io.loadmat('alcoholism/uci_eeg_features.mat')
-df = pd.DataFrame.from_dict(mat['data'])
+data = mat["data"]
+PRE = data.shape[0]
+data = data.reshape(PRE, -1)
+print(data.shape)
+df = pd.DataFrame.from_dict(data)
 
-print(df)
+# safe the data to dataFrame for easier handling
 df['y_stimulus'] = pd.DataFrame.from_dict(mat['y_stimulus']).T
 df['subjectid'] = pd.DataFrame.from_dict(mat['subjectid']).T
 df['y_stimulus_1'] = (df['y_stimulus'] == 1).astype(int)
@@ -36,65 +32,65 @@ df['y_stimulus_3'] = (df['y_stimulus'] == 3).astype(int)
 df['y_stimulus_4'] = (df['y_stimulus'] == 4).astype(int)
 df['y_stimulus_5'] = (df['y_stimulus'] == 5).astype(int)
 df['y_alcoholic'] = pd.DataFrame.from_dict(mat['y_alcoholic']).T
-df = df[(df['subjectid'].isin(get_test_subject_ids()))]  # get subjects that are not used in the hyper-parameter tuning process
+df = df[(df['subjectid'].isin(get_test_subject_ids()))]
 df = df.sample(frac=1)
-print(df)
 
-def train():
+def _10_fold_CV(data_frame, lst):
+    print(lst)
+    train_data = data_frame[~(data_frame['subjectid'].isin(lst))]
+    test_data = data_frame[(data_frame['subjectid'].isin(lst))]
+    train_data = train_data.drop(columns=['subjectid', 'y_stimulus'])
+    test_data = test_data.drop(columns=['subjectid', 'y_stimulus'])
 
-    train_data_proportion = 7
-    val_data_proportion = 3
-    test_data_proportion = 0
-    sum_amount = train_data_proportion + val_data_proportion + test_data_proportion
-
-    train_amount = round((train_data_proportion / sum_amount) * len(df))
-    val_amount = round((val_data_proportion / sum_amount) * len(df))
-
-    train_data = df[:train_amount]
-    val_data = df[train_amount: train_amount + val_amount]
-
-    train_data = train_data.drop(columns=['subjectid','y_stimulus','y_stimulus'])
-    val_data = val_data.drop(columns=['subjectid','y_stimulus','y_stimulus'])
 
     n_features = train_data.shape[1] - 1
-    # split training data into input and target
     train_input = train_data.iloc[:, :n_features]
     train_target = train_data.iloc[:, n_features]
-
-    # split training data into input and target
-    # the first 9 columns are features, the last one is target
-    val_input = val_data.iloc[:, :n_features]
-    val_target = val_data.iloc[:, n_features]
-    model = main_casper(n_features, train_input, train_target, val_input, val_target, 0.12, "within_subject", train_data)
-
-    return model
+    test_input = test_data.iloc[:, :n_features]
+    test_target = test_data.iloc[:, n_features]
+    return n_features, train_input, train_target, test_input, test_target, train_data
 
 
-train()
-# This part is for generating the testing result for the 50 trail table (Table 1)
-sensitvity = []
+train_lst = []
+sensitivity = []
 accuracy = []
 loss = []
 num_epoch = []
 num_neuron = []
 time= []
-for i in range(10):
-    df = df.sample(frac=1)
-    model = train()
-    accuracy.append(float(model[0]))
-    sensitvity.append(float(model[1]))
-    loss.append(float(model[3]))
-    num_epoch.append(float(model[2]))
-    num_neuron.append(float(model[4]))
-    time.append(float(model[5]))
 
+def ccs3 ():
+    df_data = df.copy()
+    df_data = df_data.sample(frac=1)
+    tenth = round(len(df_data) / 10)
+    for i in range(10):
+        if i <= 9:
+            test_data = df_data[tenth * i:tenth * i + tenth]
+            train_data = df_data[~(df_data.index.isin(test_data.index))]
+        else:
+            test_data = df_data[tenth * i:]
+            train_data = df_data[~(df_data.index.isin(test_data.index))]
+        train_data = train_data.drop(columns=['subjectid', 'y_stimulus'])
+        test_data = test_data.drop(columns=['subjectid', 'y_stimulus'])
+        n_features = train_data.shape[1] - 1
+        train_input = train_data.iloc[:, :n_features]
+        train_target = train_data.iloc[:, n_features]
+        test_input = test_data.iloc[:, :n_features]
+        test_target = test_data.iloc[:, n_features]
+        model = main_casper(n_features, train_input, train_target, test_input, test_target, 0.0530317, 0.00388587,
+                            0.0143323, 14, 55, "within-subject",
+                            train_data)  # 0.08643845, 0.00768044, 0.01173069, 14, 49
+        accuracy.append(float(model[0]))
+        sensitivity.append(float(model[1]))
+        loss.append(float(model[3]))
+        num_epoch.append(float(model[2]))
+        num_neuron.append(float(model[4]))
+        time.append(float(model[5]))
+
+ccs3()
 for x in range(6):
-    name = ['sensitvity','accuracy','loss','num_epoch','num_neuron','time'][x]
-    lst = [sensitvity,accuracy,loss,num_epoch,num_neuron,time][x]
+    name = ['sensitivity','accuracy','loss','num_epoch','num_neuron','time'][x]
+    lst = [sensitivity, accuracy, loss, num_epoch, num_neuron, time][x]
     print(name, " mean: ", statistics.mean(lst))
     print(name, " median: ", statistics.median(lst))
     print(name, " sd: ", statistics.stdev(lst))
-
-# torch.save(nn_model, "./model/model.pth")
-# test_input.to_pickle("./model/test_input.pkl")
-# test_target.to_pickle("./model/test_target.pkl")

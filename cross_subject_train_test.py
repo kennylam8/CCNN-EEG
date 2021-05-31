@@ -17,7 +17,7 @@ import numpy as np
 import torch
 
 from draw_subject_for_model_selection import get_test_subject_ids
-from main import main_casper
+from casper_main import main_casper
 
 
 
@@ -27,21 +27,16 @@ data = mat["data"]
 PRE = data.shape[0]
 data = data.reshape(PRE, -1)
 print(data.shape)
-# df = pd.DataFrame.from_dict(data)
-# print(df.shape)
 
-from lab4_task1_cnn_answers import AE
+from Autoencoder import AE
 model_net = AE(input_shape=3072)
-model_net.load_state_dict(torch.load("./model/old20.pth"))
+model_net.load_state_dict(torch.load("./model/model.pth"))
 model_net.eval()
 
-aaa2 = model_net.encode(torch.tensor(data).float())
-aaa2 = np.array(aaa2)
-# print("ADW", aaa2)
-#
-# print(aaa2 ,"HEY")
+mol = model_net.encode(torch.tensor(data).float())
+mol = np.array(mol)
 
-df = pd.DataFrame(aaa2)
+df = pd.DataFrame(mol)
 
 
 
@@ -94,11 +89,6 @@ num_epoch = []
 num_neuron = []
 time= []
 
-
-
-
-
-
 for i in range(1,12):
     lss = fold_test_set[10 * (i - 1):10 * i]
     df_rem = df[~(df['subjectid'].isin(lss))]
@@ -106,7 +96,7 @@ for i in range(1,12):
     train_lst = train_lst+lss
 
     n_features, train_input, train_target, test_input, test_target, train_data = _10_fold_CV(df, lss)
-    model = main_casper(n_features, train_input, train_target, test_input, test_target, 0.06423525, 0.00395256, 0.00102698, 11, 46, "within-subject", train_data) #0.08643845, 0.00768044, 0.01173069, 14, 49
+    model = main_casper(n_features, train_input, train_target, test_input, test_target, 0.08643845, 0.00768044, 0.01173069, 7, 49, "within-subject", train_data)
     accuracy.append(float(model[0]))
     sensitivity.append(float(model[1]))
     loss.append(float(model[3]))

@@ -12,5 +12,3 @@ def get_ms_subject_ids():
 
 def get_test_subject_ids():
     return subject_list[12:]
-
-
