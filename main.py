@@ -69,13 +69,16 @@ class CasPer(torch.nn.Module):
             return y_pred
 
 
-def main_casper(n_features, train_input, train_target, test_input, test_target, cutoff, mode, train_data):
+
+
+
+def main_casper(n_features, train_input, train_target, test_input, test_target, cutoff, k,checkpoint_min_loss, max_iter,constant_epoch,mode, train_data):
 
     # define the number of inputs, classes, training epochs, and learning rate
     input_neurons = n_features
     output_neurons = 2
     num_epochs = 5000  # This total number of epoch would not exceed 5000 so this is just for looping
-    max_iter = 6 if mode == "cross-subject" else 15 # maximum of neuron
+    # max_iter = 6 if mode == "cross-subject" else 15 # maximum of neuron
     t_start = time.time()
 
     # define a neural network using the customised structure
@@ -88,6 +91,8 @@ def main_casper(n_features, train_input, train_target, test_input, test_target, 
     all_epoch = 0
     for iteration in range(max_iter):
         net.iteration = iteration
+
+        # Reset the optimiser everytime a new neuron is added
         if net.iteration > 0:
             optimiser = torch.optim.Rprop([
                 {"params": net.out.parameters(), "lr": 0.01},
@@ -102,7 +107,7 @@ def main_casper(n_features, train_input, train_target, test_input, test_target, 
             ], lr=0.01,)
 
         P = 50
-        constant_epoch = 50 if mode == "cross-subject" else 500
+        # constant_epoch = 50 if mode == "cross-subject" else 500
         checkpoint_epoch = constant_epoch + P * (iteration + 1)
         FLAG = False
         for epoch in range(num_epochs):
@@ -137,7 +142,7 @@ def main_casper(n_features, train_input, train_target, test_input, test_target, 
                 loss.backward()
 
                 for p in net.parameters():
-                    k = 0.0005
+                    # k = 0.0005
                     p.grad -= k * torch.sign(p.grad) * (p.grad ** 2) * 2 **(-0.01* epoch)
 
                 # Calling the step function on an Optimiser makes an update to its parameters
@@ -149,14 +154,14 @@ def main_casper(n_features, train_input, train_target, test_input, test_target, 
                 break
 
             if epoch == checkpoint_epoch:
-                if loss_0 - loss.item() < 0.01:
+                if loss_0 - loss.item() < checkpoint_min_loss:
                     FLAG = True
                     break
                 else:
                     break
 
             # print progress
-            if epoch % 50 == 0:
+            if epoch % 50 == 0 and 1==2:
                 _, predicted = torch.max(Y_pred, 1)
 
                 # calculate and print accuracy
@@ -256,3 +261,4 @@ def main_casper(n_features, train_input, train_target, test_input, test_target, 
     print('Validation/Testing Accuracy: %.2f %%' % (100 * correct_test / total_test))
 
     return 100 * correct_test / total_test, confusion[0][0] / (confusion[0][0] + confusion[1][0]), all_epoch, loss.item(), net.iteration, t_end-t_start
+

@@ -16,7 +16,7 @@ import random
 import numpy as np
 import torch
 
-from draw_subject_for_model_selection import get_test_subject_ids
+from draw_subject_for_model_selection import get_ms_subject_ids
 from main import main_casper
 
 
@@ -58,7 +58,7 @@ df['y_stimulus_3'] = (df['y_stimulus'] == 3).astype(int)
 df['y_stimulus_4'] = (df['y_stimulus'] == 4).astype(int)
 df['y_stimulus_5'] = (df['y_stimulus'] == 5).astype(int)
 df['y_alcoholic'] = pd.DataFrame.from_dict(mat['y_alcoholic']).T
-df = df[(df['subjectid'].isin(get_test_subject_ids()))]
+df = df[(df['subjectid'].isin(get_ms_subject_ids()))]
 df = df.sample(frac=1)
 
 # normalise training data by columns (commented out because not useful)
@@ -99,14 +99,14 @@ time= []
 
 
 
-for i in range(1,12):
-    lss = fold_test_set[10 * (i - 1):10 * i]
+for i in range(10):
+    lss = [fold_test_set[i]]
     df_rem = df[~(df['subjectid'].isin(lss))]
     df_70 = df[(df['subjectid'].isin(lss))]
     train_lst = train_lst+lss
 
     n_features, train_input, train_target, test_input, test_target, train_data = _10_fold_CV(df, lss)
-    model = main_casper(n_features, train_input, train_target, test_input, test_target, 0.06423525, 0.00395256, 0.00102698, 11, 46, "within-subject", train_data) #0.08643845, 0.00768044, 0.01173069, 14, 49
+    model = main_casper(n_features, train_input, train_target, test_input, test_target, 0.15, 0.0005, 0.01, 10, 50, "within-subject", train_data)
     accuracy.append(float(model[0]))
     sensitivity.append(float(model[1]))
     loss.append(float(model[3]))
@@ -121,3 +121,5 @@ for x in range(6):
     print(name, " mean: ", statistics.mean(lst))
     print(name, " median: ", statistics.median(lst))
     print(name, " sd: ", statistics.stdev(lst))
+
+

@@ -13,11 +13,21 @@ import pandas as pd
 import scipy.io
 from draw_subject_for_model_selection import get_test_subject_ids
 from main import main_casper
+import torch
+import statistics
+
+# mat = scipy.io.loadmat('alcoholism/uci_eeg_images_v2.mat')
+# data = mat["data"]
+# PRE = data.shape[0]
+# data = data.reshape(PRE, -1)
+# print(data.shape)
+# safe the data to dataFrame for easier handling
+# df = pd.DataFrame.from_dict(data[:,:1500])
 
 mat = scipy.io.loadmat('alcoholism/uci_eeg_features.mat')
-
-# safe the data to dataFrame for easier handling
 df = pd.DataFrame.from_dict(mat['data'])
+
+print(df)
 df['y_stimulus'] = pd.DataFrame.from_dict(mat['y_stimulus']).T
 df['subjectid'] = pd.DataFrame.from_dict(mat['subjectid']).T
 df['y_stimulus_1'] = (df['y_stimulus'] == 1).astype(int)
@@ -28,7 +38,7 @@ df['y_stimulus_5'] = (df['y_stimulus'] == 5).astype(int)
 df['y_alcoholic'] = pd.DataFrame.from_dict(mat['y_alcoholic']).T
 df = df[(df['subjectid'].isin(get_test_subject_ids()))]  # get subjects that are not used in the hyper-parameter tuning process
 df = df.sample(frac=1)
-
+print(df)
 
 def train():
 
@@ -59,30 +69,31 @@ def train():
 
     return model
 
+
 train()
 # This part is for generating the testing result for the 50 trail table (Table 1)
-# sensitvity = []
-# accuracy = []
-# loss = []
-# num_epoch = []
-# num_neuron = []
-# time= []
-# for i in range(50):
-#     df = df.sample(frac=1)
-#     model = train()
-#     accuracy.append(float(model[0]))
-#     sensitvity.append(float(model[1]))
-#     loss.append(float(model[3]))
-#     num_epoch.append(float(model[2]))
-#     num_neuron.append(float(model[4]))
-#     time.append(float(model[5]))
-#
-# for x in range(6):
-#     name = ['sensitvity','accuracy','loss','num_epoch','num_neuron','time'][x]
-#     lst = [sensitvity,accuracy,loss,num_epoch,num_neuron,time][x]
-#     print(name, " mean: ", statistics.mean(lst))
-#     print(name, " median: ", statistics.median(lst))
-#     print(name, " sd: ", statistics.stdev(lst))
+sensitvity = []
+accuracy = []
+loss = []
+num_epoch = []
+num_neuron = []
+time= []
+for i in range(10):
+    df = df.sample(frac=1)
+    model = train()
+    accuracy.append(float(model[0]))
+    sensitvity.append(float(model[1]))
+    loss.append(float(model[3]))
+    num_epoch.append(float(model[2]))
+    num_neuron.append(float(model[4]))
+    time.append(float(model[5]))
+
+for x in range(6):
+    name = ['sensitvity','accuracy','loss','num_epoch','num_neuron','time'][x]
+    lst = [sensitvity,accuracy,loss,num_epoch,num_neuron,time][x]
+    print(name, " mean: ", statistics.mean(lst))
+    print(name, " median: ", statistics.median(lst))
+    print(name, " sd: ", statistics.stdev(lst))
 
 # torch.save(nn_model, "./model/model.pth")
 # test_input.to_pickle("./model/test_input.pkl")
