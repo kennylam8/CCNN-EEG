@@ -34,43 +34,8 @@ within_subject_train_test.py for within subject testing <br/>
 cross_subject_train-test.py for cross subject testing
 
 ## Testing result
-### Cross subject
-sensitivity  mean:  0.6271697052500464
-sensitivity  median:  0.6410256624221802
-sensitivity  sd:  0.20761186370608364
-accuracy  mean:  69.88162683939373
-accuracy  median:  72.39709443099274
-accuracy  sd:  11.80363301719955
-loss  mean:  0.5397271405566822
-loss  median:  0.5423167943954468
-loss  sd:  0.01467593168671243
-num_epoch  mean:  304.54545454545456
-num_epoch  median:  250.0
-num_epoch  sd:  93.41987329938274
-num_neuron  mean:  1.2727272727272727
-num_neuron  median:  1.0
-num_neuron  sd:  0.46709936649691375
-time  mean:  12.620529608293014
-time  median:  10.496304512023926
-time  sd:  4.022326460369308
+#### Cross subject
+accuracy  mean:  71%
 
-### Within subject
-Validation/Testing Accuracy: 87.88 %
-sensitivity  mean:  0.8476358830928803
-sensitivity  median:  0.8470421731472015
-sensitivity  sd:  0.01926769680584754
-accuracy  mean:  89.04809619238478
-accuracy  median:  88.92785571142284
-accuracy  sd:  0.9818162290823264
-loss  mean:  0.11681840643286705
-loss  median:  0.12064353749155998
-loss  sd:  0.02765011124411904
-num_epoch  mean:  5529.8
-num_epoch  median:  6034.0
-num_epoch  sd:  831.2397434622042
-num_neuron  mean:  13.0
-num_neuron  median:  14.0
-num_neuron  sd:  1.632993161855452
-time  mean:  147.24099092483522
-time  median:  123.43196046352386
-time  sd:  79.41430290424914
+#### Within subject
+Validation/Testing Accuracy: 91 %  
