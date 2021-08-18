@@ -29,13 +29,13 @@ the entire project is done by these steps using these files:
 5. run within_subject_train_test.py for within subject testing
 6. run cross_subject_train-test.py for cross subject testing
 
-###Regarding the result of the model please directly run 5, 6 <br/>
+### Regarding the result of the model please directly run 5, 6 <br/>
 within_subject_train_test.py for within subject testing <br/>
 cross_subject_train-test.py for cross subject testing
 
 ## Testing result
 #### Cross subject
-accuracy  mean:  71%
+Testing Accuracy mean: 71%
 
 #### Within subject
-Validation/Testing Accuracy: 91 %  
+Testing Accuracy: 91%  
