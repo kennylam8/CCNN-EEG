@@ -1,4 +1,4 @@
-##Dependencies:
+## Dependencies:
 DEAP <br>
 Pandas <br>
 Scipy.io <br>
@@ -6,9 +6,7 @@ Pytorch <br>
 Matplotlib <br>
 Standard Python Library
 
-###Please also refer to the Originality.md for the originality declaration.
-
-##File description:
+## File description:
 within_subject_train_test.py - within_subject training and testing <br>
 cross_subject_train_test.py - cross_subject training and testing <br>
 GA_cross_subject.py - run genetic algorithm to determine the hyper-paramter for cross-subject testing <br>
@@ -21,7 +19,7 @@ model/model.pth - the trainned Autoencoder model <br>
 extra/data_exploration_plots.ipynd - the jupyter notebook file for plotting <br>
 ./alcoholism - contained dataset and references paper for the dataset <br>
 
-##Procedures
+## Procedures
 casper_main.py is used for specifying Casper neural network and for training the network, it does not run on its own as it requires dataset as input,
 the entire project is done by these steps using these files:
 1. draw_subject_for_model_selection.py  for randomly drawing 12 subjects for model selection (redrawn if the 12 subject is extremely unbalanced)
@@ -35,7 +33,7 @@ the entire project is done by these steps using these files:
 within_subject_train_test.py for within subject testing <br/>
 cross_subject_train-test.py for cross subject testing
 
-##Testing result
+## Testing result
 ### Cross subject
 sensitivity  mean:  0.6271697052500464
 sensitivity  median:  0.6410256624221802
