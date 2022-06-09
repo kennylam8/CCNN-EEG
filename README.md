@@ -1,5 +1,5 @@
 ## CasPer algorithm pytorch implementation
-The code is based on the modified CasPer algorithm proposed by Treadgold, N.K. and Gedeon, T.D. (http://dx.doi.org/10.1007/3-540-63797-4_93), implemented in pytorch.
+The code is based on the modified CasPer algorithm proposed by Treadgold, N.K. and Gedeon, T.D. (http://dx.doi.org/10.1007/3-540-63797-4_93), implemented in pytorch. And performed classifcation on the UCI EEG dataset (https://archive.ics.uci.edu/ml/datasets/eeg+database).
 
 ## Disclaimer:
 This project was done as a University research project.
