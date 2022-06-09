@@ -36,9 +36,10 @@ the entire project is done by these steps using these files:
 within_subject_train_test.py for within subject testing <br/>
 cross_subject_train-test.py for cross subject testing
 
-## Testing result
+## Testing result using 11-fold Cross Validation
 #### Cross subject
-Testing Accuracy mean: 71%
-
+Testing Accuracy mean: 64.2%
 #### Within subject
-Testing Accuracy: 91%  
+Testing Accuracy: 87.9%
+
+Genetic Algorithm has limited to effect to the accuracy
