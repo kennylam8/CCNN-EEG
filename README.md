@@ -1,5 +1,8 @@
+## CasPer algorithm pytorch implementation
+The code is based on the modified CasPer algorithm proposed by Treadgold, N.K. and Gedeon, T.D. (http://dx.doi.org/10.1007/3-540-63797-4_93), implemented in pytorch.
+
 ## Disclaimer:
-This project was done as a University research assignment.
+This project was done as a University research project.
 
 ## Dependencies:
 DEAP <br>
