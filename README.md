@@ -48,7 +48,7 @@ Testing Accuracy: 87.9%
 Genetic Algorithm has limited to effect to the accuracy
 
 ## Originality and references
-Method: Treadgold, N.K. and Gedeon, T.D. (http://dx.doi.org/10.1007/3-540-63797-4_93).
+Method: Treadgold, N.K. and Gedeon, T.D. (http://dx.doi.org/10.1007/3-540-63797-4_93).<br>
 Dataset: UCI EEG Alcoholism dataset (https://archive.ics.uci.edu/ml/datasets/eeg+database).
 
 The Casper algorithm is implemented base on some sample code provided by Australian National University, algorithm/codes including normalization, plotting loss diagram and plotting error matrix and printing epoch/loss and accuracy has been copied directly from the Universitie's course material. And some codes are provided UCI originally serve as an example for the classfication of the glass dataset url: http://archive.ics.uci.edu/ml/datasets/Glass+Identification
