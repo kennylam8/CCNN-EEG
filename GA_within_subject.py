@@ -1,14 +1,3 @@
-"""
-The Casper algorithm is implemented base on the sample code provided by COMP4660
-Lab content, algorithm/codes including normalization, plotting loss diagram and plotting
-error matrix and printing epoch/loss and accuracy has been copied directly from the COMP4660
-Lab material. Some of which, as denoted in the lab material, is provided by UCI originally serve
-as an example for the classfication of the glass dataset
-url: http://archive.ics.uci.edu/ml/datasets/Glass+Identification
-
-Other codes however, written entirely on my own (Kenny Lam).
-"""
-
 import statistics
 import pandas as pd
 import scipy.io
@@ -32,7 +21,7 @@ print(data.shape)
 
 from Autoencoder import AE
 model_net = AE(input_shape=3072)
-model_net.load_state_dict(torch.load("./model/model.pth"))
+model_net.load_state_dict(torch.load("./autoencoder_model/autoencoder_model.pth"))
 model_net.eval()
 
 aaa2 = model_net.encode(torch.tensor(data).float())

@@ -1,17 +1,7 @@
 """
-The Casper algorithm is implemented base on the sample code provided by COMP4660
-Lab content, algorithm/codes including normalization, plotting loss diagram and plotting
-error matrix and printing epoch/loss and accuracy has been copied directly from the COMP4660
-Lab material. Some of which, as denoted in the lab material, is provided by UCI originally serve
-as an example for the classfication of the glass dataset
-url: http://archive.ics.uci.edu/ml/datasets/Glass+Identification
-
-Other codes however, written entirely on my own (Kenny Lam).
-"""
-"""
 main.py is used for specifying Casper neural network and for training the network, it does not run on its own as it requires dataset as input,
 the entire project is done by these steps using these files:
-1. draw_subject_for_model_selection.py  for randomly drawing 12 subjects for model selection (redrawn if the 12 subject is extremely unbalanced)
+1. draw_subject_for_model_selection.py  for randomly drawing 12 subjects for autoencoder_model selection (redrawn if the 12 subject is extremely unbalanced)
 2. determining the topology of the Casper using model_selection.py
 3. train the autoencoder using autoencoder.py
 4. run GA_cross_subject and GA_within_subject for determining the hyperparameter for the task
@@ -130,7 +120,7 @@ def main_casper(n_features, train_input, train_target, test_input, test_target, 
 
                 all_epoch += 1
                 mb += 1
-                # Perform forward pass: compute predicted y by passing x to the model.
+                # Perform forward pass: compute predicted y by passing x to the autoencoder_model.
                 Y_pred = net(X)
 
                 # Compute loss

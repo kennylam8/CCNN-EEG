@@ -97,8 +97,8 @@ def train():
         # display the epoch training loss
         print("epoch : {}/{}, recon loss = {:.8f}".format(epoch + 1, epochs, loss))
 
-    torch.save(model.state_dict(), "./model/model.pth")
-    # test_input.to_pickle("./model/test_input.pkl")
-    # test_target.to_pickle("./model/test_target.pkl")
+    torch.save(model.state_dict(), "autoencoder_model/model.pth")
+    # test_input.to_pickle("./autoencoder_model/test_input.pkl")
+    # test_target.to_pickle("./autoencoder_model/test_target.pkl")
 
-# train()  # commented out as we don't want it to update the model everytime this file is called
+# train()  # commented out as we don't want it to update the autoencoder_model everytime this file is called

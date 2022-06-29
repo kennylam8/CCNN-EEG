@@ -1,6 +1,6 @@
 import random
 
-random.seed(3988632922)  #this number is randomly generated
+random.seed(3988632922)  # This number was randomly generated
 
 subject_list = list(range(0, 123))
 random.shuffle(subject_list)

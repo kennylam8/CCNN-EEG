@@ -1,5 +1,5 @@
 """
-model_selection.py (this file) is used to determine the performance of the autoencoder (all hyperparater of Casper is not problem dependent (Same parameter as the Casper paper)
+model_selection.py (this file) is used to determine the performance of the autoencoder (all hyperparameters of Casper is not problem dependent (Same parameters as the Casper paper)
 """
 
 import statistics
@@ -14,14 +14,13 @@ from casper_main import main_casper
 from Autoencoder import AE
 
 
-
 mat = scipy.io.loadmat('alcoholism/uci_eeg_images_v2.mat')
 data = mat["data"]
 PRE = data.shape[0]
 data = data.reshape(PRE, -1)
 
 model_net = AE(input_shape=3072)
-model_net.load_state_dict(torch.load("./model/model.pth"))
+model_net.load_state_dict(torch.load("./autoencoder_model/autoencoder_model.pth"))
 model_net.eval()
 aaa2 = model_net.encode(torch.tensor(data).float())
 aaa2 = np.array(aaa2)
@@ -40,7 +39,7 @@ df['y_stimulus_3'] = (df['y_stimulus'] == 3).astype(int)
 df['y_stimulus_4'] = (df['y_stimulus'] == 4).astype(int)
 df['y_stimulus_5'] = (df['y_stimulus'] == 5).astype(int)
 df['y_alcoholic'] = pd.DataFrame.from_dict(mat['y_alcoholic']).T
-df = df[(df['subjectid'].isin(get_ms_subject_ids()))]  # Get the subject for model selection
+df = df[(df['subjectid'].isin(get_ms_subject_ids()))]  # Get the subject for autoencoder_model selection
 df = df.sample(frac=1)
 print(df.shape)
 
@@ -105,14 +104,14 @@ for i in range(10):
 #     train_target = train_data.iloc[:, n_features]
 #     test_input = test_data.iloc[:, :n_features]
 #     test_target = test_data.iloc[:, n_features]
-#     model = main_casper(n_features, train_input, train_target, test_input, test_target, 0.15, 0.0005, 0.01, 10, 50,
+#     autoencoder_model = main_casper(n_features, train_input, train_target, test_input, test_target, 0.15, 0.0005, 0.01, 10, 50,
 #                         "within-subject", train_data)
-#     accuracy.append(float(model[0]))
-#     sensitivity.append(float(model[1]))
-#     loss.append(float(model[3]))
-#     num_epoch.append(float(model[2]))
-#     num_neuron.append(float(model[4]))
-#     time.append(float(model[5]))
+#     accuracy.append(float(autoencoder_model[0]))
+#     sensitivity.append(float(autoencoder_model[1]))
+#     loss.append(float(autoencoder_model[3]))
+#     num_epoch.append(float(autoencoder_model[2]))
+#     num_neuron.append(float(autoencoder_model[4]))
+#     time.append(float(autoencoder_model[5]))
 
 
 for x in range(6):
