@@ -1,5 +1,5 @@
 ## Alcoholic Subject Detection: Classification of EEG signals using CasPer Algorithm
-The code is based on the modified CasPer algorithm proposed by Treadgold, N.K. and Gedeon, T.D. (http://dx.doi.org/10.1007/3-540-63797-4_93), implemented in pytorch. And performed classification on the UCI EEG Alcoholism dataset.
+The code is based on the CasPer algorithm proposed by Treadgold, N.K. and Gedeon, T.D. (http://dx.doi.org/10.1007/3-540-63797-4_93), implemented in pytorch. And performed classification on the UCI EEG Alcoholism dataset.
 
 ## Disclaimer:
 This project was done as a University research project. Datasets are not available at this repo.
